@@ -1,35 +1,35 @@
 mod app;
 mod lib;
 mod tui;
+mod event;
 
 use std::time::Duration;
-use crossterm::event;
 use crossterm::event::{Event, KeyCode};
 use ratatui::widgets::{Block, Borders};
+use crate::app::App;
+use crate::app::handler::handle_event;
+use crate::event::next_event;
 use crate::tui::terminal;
 
 fn main() -> anyhow::Result<()> {
     let mut terminal = terminal::init()?;
+    let mut app = App::new();
 
-    loop {
+    while !app.should_quit() {
         terminal.draw(|frame| {
             let block = Block::default()
-                .title("Classroom Puller TUI")
+                .title("Repo Puller Remastered")
                 .borders(Borders::ALL);
 
-            frame.render_widget(block, frame.size())
+            frame.render_widget(block, frame.size());
         })?;
 
-        if event::poll(Duration::from_millis(250))? {
-            if let Event::Key(key) = event::read()? {
-                if key.code == KeyCode::Char('q') {
-                    break;
-                }
-            }
+        if let Some(event) = next_event(Duration::from_millis(250))? {
+            handle_event(&mut app, event);
         }
     }
 
-    terminal::restore(terminal);
+    terminal::restore(terminal)?;
 
     Ok(())
 }
