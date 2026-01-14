@@ -1,11 +1,35 @@
+mod app;
+mod lib;
+mod tui;
+
+use std::time::Duration;
 use crossterm::event;
-fn main() -> std::io::Result<()>{
-    ratatui::run(|mut terminal| {
-        loop {
-            terminal.draw(|frame| frame.render_widget("Hello World!", frame.area()))?;
-            if event::read()?.is_key_press() {
-                break Ok(());
+use crossterm::event::{Event, KeyCode};
+use ratatui::widgets::{Block, Borders};
+use crate::tui::terminal;
+
+fn main() -> anyhow::Result<()> {
+    let mut terminal = terminal::init()?;
+
+    loop {
+        terminal.draw(|frame| {
+            let block = Block::default()
+                .title("Classroom Puller TUI")
+                .borders(Borders::ALL);
+
+            frame.render_widget(block, frame.size())
+        })?;
+
+        if event::poll(Duration::from_millis(250))? {
+            if let Event::Key(key) = event::read()? {
+                if key.code == KeyCode::Char('q') {
+                    break;
+                }
             }
         }
-    })
+    }
+
+    terminal::restore(terminal);
+
+    Ok(())
 }
